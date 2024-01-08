@@ -1,13 +1,13 @@
-defmodule Adept.Svg.MixProject do
+defmodule CozySVG.MixProject do
   use Mix.Project
 
   @version "0.3.1"
-  @url "https://github.com/adept-bits/adept_svg"
+  @url "https://github.com/cozy-elixir/cozy_svg"
 
   def project do
     [
-      app: :adept_svg,
-      name: "Adept.Svg",
+      app: :cozy_svg,
+      name: "CozySVG",
       description: "A simple and fast in-line SVG library and renderer for web applications",
       version: @version,
       elixir: "~> 1.11",

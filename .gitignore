@@ -20,7 +20,7 @@ erl_crash.dump
 *.ez
 
 # Ignore package tarball (built via "mix hex.build").
-adept_svg-*.tar
+cozy_svg-*.tar
 
 .DS_Store
 

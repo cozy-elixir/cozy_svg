@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-defmodule Adept.Svg do
+defmodule CozySVG do
   require Logger
 
   @moduledoc """
@@ -24,18 +24,18 @@ defmodule Adept.Svg do
   in-line with your web pages instead of asking the browser to make additional
   calls to servers before it can render your pages. This makes your pages load faster.
 
-  `adept_svg` renders your svg files as quickly as possible. To do this, it reads
+  `cozy_svg` renders your svg files as quickly as possible. To do this, it reads
   the svg files at compile-time and provides runtime access through a term
   stored in your beamfile.
 
   If you use `nimble_publisher`, this should be a familiar concept.
 
-  To use `adept_svg`, you create a module in your project that wraps it, providing
+  To use `cozy_svg`, you create a module in your project that wraps it, providing
   a compile-time place to build the library and runtime access to it. It also happens
   to make your template svg rendering code very simple.
 
   You do __not__ need to store your svg files in the "assets/static" directory. Those files
-  are copied into your application via a file based mechanism, whereas `adept_svg` compiles
+  are copied into your application via a file based mechanism, whereas `cozy_svg` compiles
   them in directly. I recommend simply using "assets/svg".
 
   Each `*.svg` file must contain a single valid `<svg></svg>` tag set with data as appropriate.
@@ -46,14 +46,14 @@ defmodule Adept.Svg do
       defmodule MyAppWeb.Svg do
 
         # Build the library at compile time
-        @library Adept.Svg.compile( "assets/svg" )
+        @library CozySVG.compile( "assets/svg" )
 
         # Accesses the library at run time
         defp library(), do: @library
 
         # Render an svg from the library
         def render( key, opts \\ [] ) do
-          Adept.Svg.render( library(), key, opts )
+          CozySVG.render( library(), key, opts )
         end
       end
 
@@ -95,7 +95,7 @@ defmodule Adept.Svg do
 
   ## Usage
 
-  The best way to use Adept.Svg is to create a new module in your project that wraps
+  The best way to use CozySVG is to create a new module in your project that wraps
   it, providing storage for the generated library term. This also allows you to customize
   naming, rendering or compiling as required.
 
@@ -103,14 +103,14 @@ defmodule Adept.Svg do
       defmodule MyAppWeb.Svg do
 
         # Build the library at compile time
-        @library Adept.Svg.compile( "assets/svg" )
+        @library CozySVG.compile( "assets/svg" )
 
         # Accesses the library at run time
         defp library(), do: @library
 
         # Render an svg from the library
         def render( key, opts \\ [] ) do
-          Adept.Svg.render( library(), key, opts )
+          CozySVG.render( library(), key, opts )
         end
       end
 
@@ -175,12 +175,12 @@ defmodule Adept.Svg do
   the underscore character `"_"` will be converted to the hyphen `"-"` character.
 
 
-  You don't normally call `Adept.Svg.render()` directly, except in your wrapper module. Instead,
+  You don't normally call `CozySVG.render()` directly, except in your wrapper module. Instead,
   you would `alias MyAppWeb.Svg` in a controller, live view or
   your your main app module. This allows your template code to call Svg.render directly, which
   is simple and looks nice.
 
-  The following examples all use an aliased `MyAppWeb.Svg`, which wraps `Adept.Svg`.
+  The following examples all use an aliased `MyAppWeb.Svg`, which wraps `CozySVG`.
 
   ## Example use in a template
       <%= Svg.render( "heroicons/menu" ) %>
