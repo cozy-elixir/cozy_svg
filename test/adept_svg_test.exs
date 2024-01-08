@@ -35,7 +35,8 @@ defmodule CozySVGTest do
         CozySVG.compile("test/svgs/more")
         |> CozySVG.compile("test/svgs/more")
       end)
-    assert (log =~ "[warn]  SVG file:") || (log =~ "[warning] SVG file:")
+
+    assert log =~ "[warn]  SVG file:" || log =~ "[warning] SVG file:"
     assert log =~ "overwrites existing svg: cube"
   end
 
