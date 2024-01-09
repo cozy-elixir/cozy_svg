@@ -22,7 +22,5 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 cozy_svg-*.tar
 
-.DS_Store
-
-# Temporary files for e.g. tests
-/tmp
+# Temporary files, for example, from tests.
+/tmp/
