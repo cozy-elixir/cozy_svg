@@ -119,6 +119,7 @@ defmodule CozySVG do
 
   """
   @spec compile(library(), path()) :: library()
+  @dialyzer {:no_match, compile: 2}
   def compile(%{} = library \\ %{}, root) when is_binary(root) do
     root = Path.expand(root)
 
@@ -139,8 +140,8 @@ defmodule CozySVG do
         {:error, :duplicate, key} ->
           raise CozySVG.CompileError, "SVG #{inspect(key)} is duplicated"
 
-        {:error, :file, error} ->
-          raise CozySVG.CompileError, "SVG #{inspect(key)} is invalid due to #{inspect(error)}"
+        {:error, :file, reason} ->
+          raise CozySVG.CompileError, "SVG #{inspect(key)} is invalid due to #{inspect(reason)}"
       end
     end)
   end
@@ -175,8 +176,8 @@ defmodule CozySVG do
 
       {:ok, {open_tag, content, close_tag}}
     else
-      {:error, error} ->
-        {:error, :file, error}
+      {:error, reason} ->
+        {:error, :file, reason}
 
       {:valid_string?, false} ->
         {:error, :file, :invalid_chars}
