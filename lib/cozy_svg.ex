@@ -235,7 +235,7 @@ defmodule CozySVG do
   end
 
   def render(%{} = library, key, attrs) when is_map(attrs) do
-    attrs = Map.to_list(attrs)
+    attrs = attrs |> Map.to_list() |> Enum.sort_by(&elem(&1, 0))
     render(library, key, attrs)
   end
 

@@ -58,7 +58,7 @@ defmodule CozySVGTest do
 
     test "inserts attributes as a map" do
       svg = CozySVG.render(library(), "x", %{class: "test_class", "@click": "action"})
-      assert String.starts_with?(svg, "<svg class=\"test_class\" @click=\"action\" xmlns=")
+      assert String.starts_with?(svg, "<svg @click=\"action\" class=\"test_class\" xmlns=")
     end
 
     test "converts _ in attr name into -" do
