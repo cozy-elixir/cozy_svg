@@ -51,8 +51,13 @@ defmodule CozySVGTest do
       assert String.ends_with?(svg, "</svg>")
     end
 
-    test "inserts attributes" do
+    test "inserts attributes as a list" do
       svg = CozySVG.render(library(), "x", class: "test_class", "@click": "action")
+      assert String.starts_with?(svg, "<svg class=\"test_class\" @click=\"action\" xmlns=")
+    end
+
+    test "inserts attributes as a map" do
+      svg = CozySVG.render(library(), "x", %{class: "test_class", "@click": "action"})
       assert String.starts_with?(svg, "<svg class=\"test_class\" @click=\"action\" xmlns=")
     end
 

@@ -58,6 +58,21 @@ defmodule CozySVG do
   comment and stripped from the content during compilation.
 
   ## Phoenix Integration
+
+  ### `svg/1` component
+
+  An example:
+
+      use Phoenix.Component
+
+      attr :key, :string, required: true, doc: "The key for SVG file."
+      attr :rest, :global, doc: "Additional attributes to add to the <svg> tag."
+
+      def svg(assigns) do
+        ~H\"\"\"
+        <%= raw DemoWeb.SVG.render(@key, @rest) %>
+        \"\"\"
+      end
         
   ### Live reloading
 
@@ -75,7 +90,7 @@ defmodule CozySVG do
   @type library :: map()
   @type path :: String.t()
   @type key :: String.t()
-  @type attrs :: keyword()
+  @type attrs :: keyword() | map()
 
   @doc """
   Compiles a folder of `*.svg` files into a library.
@@ -177,24 +192,38 @@ defmodule CozySVG do
   The named svg must be in the provided library, which should be built using the
   compile function.
 
+  ## Examples
+
+      iex> CozySVG.render(library(), "heroicons/menu")
+      "<svg xmlns= ... </svg>"
+
+  """
+  @spec render(library(), key()) :: String.t()
+  def render(%{} = library, key) do
+    render(library, key, [])
+  end
+
+  @doc """
+  Renders an SVG as a string.
+
+  The named svg must be in the provided library, which should be built using the
+  compile function.
+
   The `attrs` will be inserted as attributes of the `<svg></svg>` tag. But keep
   one thing in mind, the underscore character `"_"` in attribute name will be
   converted to the hyphen character `"-"`.
 
   ## Examples
 
-      iex> CozySVG.render(library(), "heroicons/menu")
-      "<svg xmlns= ... </svg>"
-
       iex> CozySVG.render(library(), "heroicons/menu", class: "h-5 w-5")
       "<svg class=\"h-5 w-5\" xmlns= ... </svg>"
 
-      iex> CozySVG.render(library(), "heroicons/menu", phx_click: "action")
+      iex> CozySVG.render(library(), "heroicons/menu", %{phx_click: "action"})
       "<svg phx-click=\"action\" xmlns= ... </svg>"
 
   """
   @spec render(library(), key(), attrs()) :: String.t()
-  def render(%{} = library, key, attrs \\ []) do
+  def render(%{} = library, key, attrs) when is_list(attrs) do
     case Map.fetch(library, key) do
       {:ok, {open_tag, content, close_tag}} ->
         open_tag <> render_attrs(attrs) <> content <> close_tag
@@ -202,6 +231,11 @@ defmodule CozySVG do
       _ ->
         raise CozySVG.RuntimeError, "SVG #{inspect(key)} not found in library"
     end
+  end
+
+  def render(%{} = library, key, attrs) when is_map(attrs) do
+    attrs = Map.to_list(attrs)
+    render(library, key, attrs)
   end
 
   defp render_attrs(attrs), do: render_attrs(attrs, "")
