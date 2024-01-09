@@ -1,205 +1,225 @@
 defmodule CozySVG do
-  require Logger
-
   @moduledoc """
-  A tiny and fast library to compile and render inline SVGs.
+  A tiny and fast library to compile and render SVG files.
 
-  SVG is an image format which is very simple, and usually small. It is faster,
-  and recommended to include the SVG data in-line with web pages instead of
-  instead of asking the browser to make additional requests to servers. This
-  makes web pages load faster.
+  `CozySVG` reads the SVG files at compile-time and provides runtime access
+  through a term stored in the BEAM file, which is very fast to access.
 
-  `cozy_svg` renders SVG files as quickly as possible. To do this, it reads
-  the SVG files at compile-time and provides runtime access through a term
-  stored in the beamfile.
+  ## Why use it?
 
-  To use `cozy_svg`, you create a module that wraps it, providing a
-  compile-time place to build the library and runtime access to it
-  . It also happens to make your template svg rendering code very simple.
+  It is recommended to embed the SVG data into web pages instead of asking
+  the browser to make additional requests to servers. This makes web pages load
+  faster.
 
-  You do __not__ need to store your svg files in the "assets/static" directory. Those files
-  are copied into your application via a file based mechanism, whereas `cozy_svg` compiles
-  them in directly. I recommend simply using "assets/svg".
-
-  Each `*.svg` file must contain a single valid `<svg></svg>` tag set with data as appropriate.
-  Anything before the `<svg>` tag or after the `</svg>` is treated as comment and stripped
-  from the text during compilation.
-
-  ## Example wrapper module
-      defmodule MyAppWeb.Svg do
-
-        # Build the library at compile time
-        @library CozySVG.compile( "assets/svg" )
-
-        # Accesses the library at run time
-        defp library(), do: @library
-
-        # Render an svg from the library
-        def render( key, opts \\ [] ) do
-          CozySVG.render( library(), key, opts )
-        end
-      end
-
-  To use the library, you would `alias MyAppWeb.Svg` in a controller, live_view or
-  your your main app module. This allows your template code to call Svg.render directly.
-
-  ## Example use in a template
-
-      <%= Svg.render( "heroicons/user", class: "h-5 w-5 inline" ) %>
-
-  ### Live reloading
-
-  If you are using Phoenix, you can enable live reloading by simply telling Phoenix to watch the svgs directory.
-  Open up "config/dev.exs", search for `live_reload:` and add this to the list of patterns:
-
-  ```elixir
-  live_reload: [
-    patterns: [
-      ...,
-      ~r"assets/svg/*/.*(svg)$"
-    ]
-  ]
-  ```
-  """
-
-  defmodule Error do
-    @moduledoc false
-    defexception message: nil, svg: nil
-  end
-
-  # --------------------------------------------------------
-  @doc """
-  Compile a folder of `*.svg` files into a library you can render from.
-
-  The folder and it's subfolders will be traversed and all valid `*.svg` files will
-  be added to the library. Each svg will be added to the library with a key that is
-  relative path of the svg file, minus the .svg part. For example, if you compile
-  the folder "assets/svg" and it finds a file with the path "assets/svg/heroicons/calendar.svg",
-  then the key for that svg is `"heroicons/calendar"` in the library.
+  `CozySVG` provides the key ability to do this - reading the SVG files as
+  strings in an efficient way. That's the key.
 
   ## Usage
 
-  The best way to use CozySVG is to create a new module in your project that wraps
-  it, providing storage for the generated library term. This also allows you to customize
-  naming, rendering or compiling as required.
+  To use `CozySVG`, it's better to create a wrapper module instead of calling
+  the low-level API directly.
 
-  ## Example
-      defmodule MyAppWeb.Svg do
+  ### create wrapper module with pre-built macro
 
+  See `CozySVG.QuickWrapper` for more details.
+
+  ### create wrapper module with low-level API
+
+  This method offers the greatest flexibility, allowing you to customize naming
+  , rendering or compiling as required.
+
+  An example:
+
+      defmodule DemoWeb.SVG do
         # Build the library at compile time
-        @library CozySVG.compile( "assets/svg" )
+        @library CozySVG.compile("assets/svg")
 
-        # Accesses the library at run time
+        # Accesses the library at runtime
         defp library(), do: @library
 
-        # Render an svg from the library
-        def render( key, opts \\ [] ) do
-          CozySVG.render( library(), key, opts )
+        # Render an SVG from the library
+        def render(key, attrs \\ []) do
+          CozySVG.render(library(), key, attrs)
         end
       end
 
-  Note that @library is accessed through a function. The library could become large,
-  so you want to wrap it with a function to ensure that it is only stored as a term
-  in your beam file once.
+  `DemoWeb.SVG.render/1` / `DemoWeb.SVG.render/2` will be ready to use.
+
+  > `@library` should be accessed through a function.
+  >
+  > The library could be very large, wrapping it with a function ensures that 
+  > it is only stored as a term in BEAM file once.
+
+  ### The requirements for SVG files
+
+  Every SVG file must contain a single valid `<svg></svg>` tag.
+
+  Anything before the `<svg>` tag or after the `</svg>` tag is treated as
+  comment and stripped from the content during compilation.
+
+  ## Phoenix Integration
+        
+  ### Live reloading
+
+  Enable live reloading by telling Phoenix to watch the SVG directory:
+
+      live_reload: [
+        patterns: [
+          # ...
+          ~r"assets/svg/*/.*(svg)$"
+        ]
+      ]
+
   """
-  @spec compile(map(), String.t()) :: map()
-  def compile(%{} = library \\ %{}, svg_root) when is_bitstring(svg_root) do
-    svg_root
-    |> Kernel.<>("/**/*.svg")
+
+  @type library :: map()
+  @type path :: String.t()
+  @type key :: String.t()
+  @type attrs :: keyword()
+
+  @doc """
+  Compiles a folder of `*.svg` files into a library.
+
+  The folder and it's subfolders will be traversed and all valid `*.svg` files
+  will be added to the library with a key that is relative path of the SVG file
+  minus the `.svg` part.
+
+  For example, if you compile the folder "assets/svg" and it finds a file with
+  the path "assets/svg/heroicons/calendar.svg", then the key for that SVG is
+  `"heroicons/calendar"` in the library.
+
+  ## Examples
+
+      # Compiles a folder
+      CozySVG.compile("assets/svg")
+
+      # Compiles multiple folders
+      CozySVG.compile("assets/svg_a")
+      |> CozySVG.compile("assets/svg_b")
+
+      # Or, compiles multiple folders with a neater pipeline
+      %{}
+      |> CozySVG.compile("assets/svg_a")
+      |> CozySVG.compile("assets/svg_b")
+
+  """
+  @spec compile(library(), path()) :: library()
+  def compile(%{} = library \\ %{}, root) when is_binary(root) do
+    root = Path.expand(root)
+
+    unless File.dir?(root) do
+      raise CozySVG.CompileError, "SVG root at #{root} does not exist"
+    end
+
+    root
+    |> Path.join("**/*.svg")
     |> Path.wildcard()
     |> Enum.reduce(library, fn path, acc ->
-      with {:ok, key, svg} <- read_svg(path, svg_root),
-           :ok <- unique_key(library, key, path) do
-        Map.put(acc, key, svg <> "</svg>")
-      else
-        {:file_error, err, path} ->
-          raise %Error{message: "SVG file #{inspect(path)} is invalid, err: #{err}", svg: path}
+      key = get_key(path, root)
 
-        {:duplicate, key, path} ->
-          Logger.warning("SVG file: #{path} overwrites existing svg: #{key}")
+      with :ok <- validate_key(library, key),
+           {:ok, svg} <- read_svg(path) do
+        Map.put(acc, key, svg)
+      else
+        {:error, :duplicate, key} ->
+          raise CozySVG.CompileError, "SVG #{inspect(key)} is duplicated"
+
+        {:error, :file, error} ->
+          raise CozySVG.CompileError, "SVG #{inspect(key)} is invalid due to #{inspect(error)}"
       end
     end)
   end
 
-  defp read_svg(path, root) do
-    with {:ok, svg} <- File.read(path),
-         true <- String.valid?(svg),
-         [_, svg] <- String.split(svg, "<svg"),
-         [svg, _] <- String.split(svg, "</svg>") do
-      {
-        :ok,
-        # make the key
-        path
-        |> String.trim(root)
-        |> String.trim("/")
-        |> String.trim_trailing(".svg"),
-        svg
-      }
-    else
-      err -> {:file_error, err, path}
-    end
+  defp get_key(path, root) do
+    path
+    |> String.trim(root)
+    |> String.trim("/")
+    |> String.trim_trailing(".svg")
   end
 
-  defp unique_key(library, key, path) do
+  defp validate_key(library, key) do
     case Map.fetch(library, key) do
-      {:ok, _} -> {:duplicate, key, path}
+      {:ok, _} -> {:error, :duplicate, key}
       _ -> :ok
     end
   end
 
-  # --------------------------------------------------------
-  @doc """
-  Renders an svg into a safe string that can be inserted directly into a Phoenix template.
+  @re_svg ~r|<svg\s*[^>]*?>([\s\S]*?)</svg>|
+  defp read_svg(path) do
+    open_tag = "<svg"
+    close_tag = "</svg>"
 
-  The named svg must be in the provided library, which should be build using the compile function.
+    with {:ok, svg} <- File.read(path),
+         {:valid_string?, true} <- {:valid_string?, String.valid?(svg)},
+         {:valid_format?, true} <- {:valid_format?, Regex.match?(@re_svg, svg)} do
+      content =
+        svg
+        |> String.trim()
+        |> String.trim_leading(open_tag)
+        |> String.trim_trailing(close_tag)
 
-  _Optional_: pass in a keyword list of attributes to insert into the svg tag. This can be
-  used to add `class="something"` tag attributes, phoenix directives such as `phx-click`, or
-  even alpine directives such as `@click="some action"`. Note that key names containing
-  the underscore character `"_"` will be converted to the hyphen `"-"` character.
+      {:ok, {open_tag, content, close_tag}}
+    else
+      {:error, error} ->
+        {:error, :file, error}
 
+      {:valid_string?, false} ->
+        {:error, :file, :invalid_chars}
 
-  You don't normally call `CozySVG.render()` directly, except in your wrapper module. Instead,
-  you would `alias MyAppWeb.Svg` in a controller, live view or
-  your your main app module. This allows your template code to call Svg.render directly, which
-  is simple and looks nice.
-
-  The following examples all use an aliased `MyAppWeb.Svg`, which wraps `CozySVG`.
-
-  ## Example use in a template
-      <%= Svg.render( "heroicons/menu" ) %>
-      <%= Svg.render( "heroicons/user", class: "h-5 w-5 inline" ) %>
-
-  ## Other examples
-  Without attributes:
-      Svg.render( "heroicons/menu" )
-      {:safe, "<svg xmlns= ... </svg>"}
-
-  With options:
-      Svg.render( "heroicons/menu", class: "h-5 w-5" )
-      {:safe, "<svg class=\"h-5 w-5\" xmlns= ... </svg>"}
-
-      Svg.render( "heroicons/menu", phx_click: "action" )
-      {:safe, "<svg phx-click=\"action\" xmlns= ... </svg>"}
-
-      Svg.render( "heroicons/menu", "@click": "alpine_action" )
-      {:safe, "<svg @click=\"alpine_action\" xmlns= ... </svg>"}
-  """
-  @spec render(map(), String.t(), list()) :: String.t()
-  def render(%{} = library, key, attrs \\ []) do
-    case Map.fetch(library, key) do
-      {:ok, svg} -> {:safe, "<svg" <> render_attrs(attrs) <> svg}
-      _ -> raise %Error{message: "SVG #{inspect(key)} not found", svg: key}
+      {:valid_format?, false} ->
+        {:error, :file, :invalid_format}
     end
   end
 
-  # --------------------------------------------------------
-  # transform an opts list into a string of tag options
-  defp render_attrs(attrs), do: do_render_attrs(attrs, "")
-  defp do_render_attrs([], acc), do: acc
+  @doc """
+  Renders an SVG as a string.
 
-  defp do_render_attrs([{key, value} | tail], acc) do
-    key = to_string(key) |> String.replace("_", "-")
-    do_render_attrs(tail, "#{acc} #{key}=#{inspect(value)}")
+  The named svg must be in the provided library, which should be built using the
+  compile function.
+
+  The `attrs` will be inserted as attributes of the `<svg></svg>` tag. But keep
+  one thing in mind, the underscore character `"_"` in attribute name will be
+  converted to the hyphen character `"-"`.
+
+  ## Examples
+
+      iex> CozySVG.render(library(), "heroicons/menu")
+      "<svg xmlns= ... </svg>"
+
+      iex> CozySVG.render(library(), "heroicons/menu", class: "h-5 w-5")
+      "<svg class=\"h-5 w-5\" xmlns= ... </svg>"
+
+      iex> CozySVG.render(library(), "heroicons/menu", phx_click: "action")
+      "<svg phx-click=\"action\" xmlns= ... </svg>"
+
+  """
+  @spec render(library(), key(), attrs()) :: String.t()
+  def render(%{} = library, key, attrs \\ []) do
+    case Map.fetch(library, key) do
+      {:ok, {open_tag, content, close_tag}} ->
+        open_tag <> render_attrs(attrs) <> content <> close_tag
+
+      _ ->
+        raise CozySVG.RuntimeError, "SVG #{inspect(key)} not found in library"
+    end
   end
+
+  defp render_attrs(attrs), do: render_attrs(attrs, "")
+
+  defp render_attrs([], acc), do: acc
+
+  defp render_attrs([{name, value} | tail], acc) do
+    name = to_string(name) |> String.replace("_", "-")
+    render_attrs(tail, "#{acc} #{name}=#{inspect(value)}")
+  end
+end
+
+defmodule CozySVG.CompileError do
+  @moduledoc false
+  defexception message: nil, svg: nil
+end
+
+defmodule CozySVG.RuntimeError do
+  @moduledoc false
+  defexception message: nil
 end
