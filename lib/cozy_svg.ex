@@ -61,19 +61,26 @@ defmodule CozySVG do
 
   ### `svg/1` component
 
-  An example:
-
-      use Phoenix.Component
-
-      attr :key, :string, required: true, doc: "The key for SVG file."
-      attr :rest, :global, doc: "Additional attributes to add to the <svg> tag."
-
-      def svg(assigns) do
-        ~H\"\"\"
-        <%= raw DemoWeb.SVG.render(@key, @rest) %>
-        \"\"\"
-      end
+  An example module:
         
+      defmodule DemoWebSvgComponents do
+        defmodule CompiledSVG do
+          use CozySVG.QuickWrapper, root: "assets/svg"
+        end
+      
+        use Phoenix.Component
+        import Phoenix.HTML, only: [raw: 1]
+      
+        attr :key, :string, required: true, doc: "The key for SVG file."
+        attr :rest, :global, doc: "Additional attributes to add to the <svg> tag."
+      
+        def svg(assigns) do
+          ~H\"\"\"
+          <%= raw(CompiledSVG.render(@key, @rest)) %>
+          \"\"\"
+        end
+      end
+
   ### Live reloading
 
   Enable live reloading by telling Phoenix to watch the SVG directory:
