@@ -40,29 +40,61 @@ defmodule CozySVGTest do
     end
   end
 
-  describe "render/2" do
+  describe "render" do
     test "retrieves the svg as a safe string" do
-      svg = CozySVG.render(library(), "x")
+      {:ok, svg} = CozySVG.render(library(), "x")
       assert String.starts_with?(svg, "<svg xmlns=")
     end
 
     test "preserves the tailing </svg>" do
-      svg = CozySVG.render(library(), "x")
+      {:ok, svg} = CozySVG.render(library(), "x")
       assert String.ends_with?(svg, "</svg>")
     end
 
     test "inserts attributes as a list" do
-      svg = CozySVG.render(library(), "x", class: "test_class", "@click": "action")
+      {:ok, svg} = CozySVG.render(library(), "x", class: "test_class", "@click": "action")
       assert String.starts_with?(svg, "<svg class=\"test_class\" @click=\"action\" xmlns=")
     end
 
     test "inserts attributes as a map" do
-      svg = CozySVG.render(library(), "x", %{class: "test_class", "@click": "action"})
+      {:ok, svg} = CozySVG.render(library(), "x", %{class: "test_class", "@click": "action"})
       assert String.starts_with?(svg, "<svg @click=\"action\" class=\"test_class\" xmlns=")
     end
 
     test "converts _ in attr name into -" do
-      svg = CozySVG.render(library(), "x", test_attr: "some_data")
+      {:ok, svg} = CozySVG.render(library(), "x", test_attr: "some_data")
+      assert String.starts_with?(svg, "<svg test-attr=\"some_data\" xmlns=")
+    end
+
+    test "raises an error if the svg is not in the library" do
+      assert {:error, %CozySVG.RuntimeError{message: "SVG \"missing\" not found in library"}} =
+               CozySVG.render(library(), "missing")
+    end
+  end
+
+  describe "render!" do
+    test "retrieves the svg as a safe string" do
+      svg = CozySVG.render!(library(), "x")
+      assert String.starts_with?(svg, "<svg xmlns=")
+    end
+
+    test "preserves the tailing </svg>" do
+      svg = CozySVG.render!(library(), "x")
+      assert String.ends_with?(svg, "</svg>")
+    end
+
+    test "inserts attributes as a list" do
+      svg = CozySVG.render!(library(), "x", class: "test_class", "@click": "action")
+      assert String.starts_with?(svg, "<svg class=\"test_class\" @click=\"action\" xmlns=")
+    end
+
+    test "inserts attributes as a map" do
+      svg = CozySVG.render!(library(), "x", %{class: "test_class", "@click": "action"})
+      assert String.starts_with?(svg, "<svg @click=\"action\" class=\"test_class\" xmlns=")
+    end
+
+    test "converts _ in attr name into -" do
+      svg = CozySVG.render!(library(), "x", test_attr: "some_data")
       assert String.starts_with?(svg, "<svg test-attr=\"some_data\" xmlns=")
     end
 
@@ -70,7 +102,7 @@ defmodule CozySVGTest do
       assert_raise CozySVG.RuntimeError,
                    "SVG \"missing\" not found in library",
                    fn ->
-                     CozySVG.render(library(), "missing")
+                     CozySVG.render!(library(), "missing")
                    end
     end
   end

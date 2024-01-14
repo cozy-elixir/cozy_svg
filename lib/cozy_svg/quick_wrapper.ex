@@ -26,6 +26,10 @@ defmodule CozySVG.QuickWrapper do
       DemoWeb.SVG.render("misc/header", class: "w-6 h-auto mr-2")
       DemoWeb.SVG.render("misc/footer", class: "w-6 h-auto mr-2")
 
+      DemoWeb.SVG.render!("logo")
+      DemoWeb.SVG.render!("misc/header", class: "w-6 h-auto mr-2")
+      DemoWeb.SVG.render!("misc/footer", class: "w-6 h-auto mr-2")
+
   """
 
   defmacro __using__(opts) do
@@ -51,6 +55,10 @@ defmodule CozySVG.QuickWrapper do
 
       def render(key, attrs \\ []) do
         CozySVG.render(library(), key, attrs)
+      end
+
+      def render!(key, attrs \\ []) do
+        CozySVG.render!(library(), key, attrs)
       end
     end
   end

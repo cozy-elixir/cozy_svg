@@ -1,3 +1,15 @@
+defmodule CozySVG.CompileError do
+  @type t :: %__MODULE__{}
+
+  defexception message: nil
+end
+
+defmodule CozySVG.RuntimeError do
+  @type t :: %__MODULE__{}
+
+  defexception message: nil
+end
+
 defmodule CozySVG do
   @moduledoc """
   A tiny and fast library to compile and render SVG files.
@@ -41,11 +53,17 @@ defmodule CozySVG do
         def render(key, attrs \\ []) do
           CozySVG.render(library(), key, attrs)
         end
+
+        # Render an SVG from the library
+        def render!(key, attrs \\ []) do
+          CozySVG.render!(library(), key, attrs)
+        end
       end
 
-  `DemoWeb.SVG.render/1` / `DemoWeb.SVG.render/2` will be ready to use.
+  `DemoWeb.SVG.render/1` / `DemoWeb.SVG.render/2` / `DemoWeb.SVG.render!/1` / `DemoWeb.SVG.render!/2`
+  will be ready to use.
 
-  > `@library` should be accessed through a function.
+  > #### `@library` should be accessed through a function. {: .info}
   >
   > The library could be very large, wrapping it with a function ensures that 
   > it is only stored as a term in BEAM file once.
@@ -76,7 +94,7 @@ defmodule CozySVG do
       
         def svg(assigns) do
           ~H\"\"\"
-          <%= raw(CompiledSVG.render(@key, @rest)) %>
+          <%= raw(CompiledSVG.render!(@key, @rest)) %>
           \"\"\"
         end
       end
@@ -106,8 +124,8 @@ defmodule CozySVG do
   will be added to the library with a key that is relative path of the SVG file
   minus the `.svg` part.
 
-  For example, if you compile the folder "assets/svg" and it finds a file with
-  the path "assets/svg/heroicons/calendar.svg", then the key for that SVG is
+  For example, if you compile the folder `"assets/svg"` and it finds a file with
+  the path `"assets/svg/heroicons/calendar.svg"`, then the key for that SVG is
   `"heroicons/calendar"` in the library.
 
   ## Examples
@@ -203,11 +221,11 @@ defmodule CozySVG do
   ## Examples
 
       iex> CozySVG.render(library(), "heroicons/menu")
-      "<svg xmlns= ... </svg>"
+      {:ok, "<svg xmlns= ... </svg>"}
 
   """
-  @spec render(library(), key()) :: String.t()
-  def render(%{} = library, key) do
+  @spec render(library(), key()) :: {:ok, String.t()} | {:error, CozySVG.RuntimeError.t()}
+  def render(library, key) when is_map(library) do
     render(library, key, [])
   end
 
@@ -224,26 +242,61 @@ defmodule CozySVG do
   ## Examples
 
       iex> CozySVG.render(library(), "heroicons/menu", class: "h-5 w-5")
-      "<svg class=\"h-5 w-5\" xmlns= ... </svg>"
+      {:ok, "<svg class=\"h-5 w-5\" xmlns= ... </svg>"}
 
       iex> CozySVG.render(library(), "heroicons/menu", %{phx_click: "action"})
-      "<svg phx-click=\"action\" xmlns= ... </svg>"
+      {:ok, "<svg phx-click=\"action\" xmlns= ... </svg>"}
 
   """
-  @spec render(library(), key(), attrs()) :: String.t()
-  def render(%{} = library, key, attrs) when is_list(attrs) do
+  @spec render(library(), key(), attrs()) ::
+          {:ok, String.t()} | {:error, CozySVG.RuntimeError.t()}
+  def render(library, key, attrs) when is_map(library) and is_list(attrs) do
     case Map.fetch(library, key) do
       {:ok, {open_tag, content, close_tag}} ->
-        open_tag <> render_attrs(attrs) <> content <> close_tag
+        {:ok, open_tag <> render_attrs(attrs) <> content <> close_tag}
 
       _ ->
-        raise CozySVG.RuntimeError, "SVG #{inspect(key)} not found in library"
+        {:error, %CozySVG.RuntimeError{message: "SVG #{inspect(key)} not found in library"}}
     end
   end
 
   def render(%{} = library, key, attrs) when is_map(attrs) do
     attrs = attrs |> Map.to_list() |> Enum.sort_by(&elem(&1, 0))
     render(library, key, attrs)
+  end
+
+  @doc """
+  The bang variant of `render/2`.
+
+  ## Examples
+
+      iex> CozySVG.render!(library(), "heroicons/menu")
+      "<svg xmlns= ... </svg>"
+
+  """
+  @spec render!(library(), key()) :: {:ok, String.t()} | {:error, CozySVG.RuntimeError.t()}
+  def render!(library, key) when is_map(library) do
+    render!(library, key, [])
+  end
+
+  @doc """
+  The bang variant of `render/3`.
+
+  ## Examples
+
+      iex> CozySVG.render!(library(), "heroicons/menu", class: "h-5 w-5")
+      "<svg class=\"h-5 w-5\" xmlns= ... </svg>"
+
+      iex> CozySVG.render!(library(), "heroicons/menu", %{phx_click: "action"})
+      "<svg phx-click=\"action\" xmlns= ... </svg>"
+
+  """
+  @spec render!(library(), key(), attrs()) :: String.t()
+  def render!(library, key, attrs) when is_map(library) do
+    case render(library, key, attrs) do
+      {:ok, svg} -> svg
+      {:error, exception} -> raise exception
+    end
   end
 
   defp render_attrs(attrs), do: render_attrs(attrs, "")
@@ -254,14 +307,4 @@ defmodule CozySVG do
     name = to_string(name) |> String.replace("_", "-")
     render_attrs(tail, "#{acc} #{name}=#{inspect(value)}")
   end
-end
-
-defmodule CozySVG.CompileError do
-  @moduledoc false
-  defexception message: nil, svg: nil
-end
-
-defmodule CozySVG.RuntimeError do
-  @moduledoc false
-  defexception message: nil
 end

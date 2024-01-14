@@ -7,7 +7,8 @@ defmodule CozySVG.QuickWrapperTest do
         use CozySVG.QuickWrapper, root: "../svgs"
       end
 
-      assert "<svg" <> _ = SVG.render("x")
+      assert {:ok, "<svg" <> _} = SVG.render("x")
+      assert "<svg" <> _ = SVG.render!("x")
     end
   end
 end
