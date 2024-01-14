@@ -274,7 +274,7 @@ defmodule CozySVG do
       "<svg xmlns= ... </svg>"
 
   """
-  @spec render!(library(), key()) :: {:ok, String.t()} | {:error, CozySVG.RuntimeError.t()}
+  @spec render!(library(), key()) :: String.t()
   def render!(library, key) when is_map(library) do
     render!(library, key, [])
   end
