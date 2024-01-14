@@ -1,7 +1,7 @@
 defmodule CozySVG.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.2.1"
   @description "A tiny and fast library to compile and render SVG files."
   @source_url "https://github.com/cozy-elixir/cozy_svg"
 
