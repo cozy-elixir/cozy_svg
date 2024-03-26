@@ -51,7 +51,7 @@ defmodule CozySVG.QuickWrapper do
         Path.wildcard("#{@library_path}/**/*.svg") |> :erlang.md5() != @paths_hash
       end
 
-      defp library(), do: @library
+      defp library, do: @library
 
       def render(key, attrs \\ []) do
         CozySVG.render(library(), key, attrs)
@@ -59,6 +59,12 @@ defmodule CozySVG.QuickWrapper do
 
       def render!(key, attrs \\ []) do
         CozySVG.render!(library(), key, attrs)
+      end
+
+      def debug do
+        %{
+          library: library()
+        }
       end
     end
   end
