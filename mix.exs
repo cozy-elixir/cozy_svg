@@ -4,12 +4,13 @@ defmodule CozySVG.MixProject do
   @version "0.2.2"
   @description "A tiny and fast library to compile and render SVG files."
   @source_url "https://github.com/cozy-elixir/cozy_svg"
+  @changelog_url "https://github.com/cozy-elixir/cozy_svg/blob/v#{@version}/CHANGELOG.md"
 
   def project do
     [
       app: :cozy_svg,
       version: @version,
-      elixir: "~> 1.14",
+      elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: @description,
@@ -31,7 +32,7 @@ defmodule CozySVG.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_check, "~> 0.15.0", only: [:dev], runtime: false},
+      {:ex_check, ">= 0.0.0", only: [:dev], runtime: false},
       {:credo, ">= 0.0.0", only: [:dev], runtime: false},
       {:dialyxir, ">= 0.0.0", only: [:dev], runtime: false},
       {:ex_doc, ">= 0.0.0", only: [:dev], runtime: false},
@@ -43,14 +44,16 @@ defmodule CozySVG.MixProject do
     %{
       licenses: ["Apache-2.0"],
       maintainers: ["Zeke Dou", "Boyd Multerer"],
-      links: %{"GitHub" => @source_url}
+      links: %{
+        "GitHub" => @source_url,
+        "Changelog" => @changelog_url
+      }
     }
   end
 
   defp docs do
     [
       extras: ["README.md", "CHANGELOG.md"],
-      main: "readme",
       source_url: @source_url,
       source_ref: "v#{@version}"
     ]

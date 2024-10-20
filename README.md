@@ -3,7 +3,7 @@
 [![CI](https://github.com/cozy-elixir/cozy_svg/actions/workflows/ci.yml/badge.svg)](https://github.com/cozy-elixir/cozy_svg/actions/workflows/ci.yml)
 [![Hex.pm](https://img.shields.io/hexpm/v/cozy_svg.svg)](https://hex.pm/packages/cozy_svg)
 
-> A tiny and fast library to compile and render SVG files.
+A tiny and fast library to compile and render SVG files.
 
 ## Installation
 
